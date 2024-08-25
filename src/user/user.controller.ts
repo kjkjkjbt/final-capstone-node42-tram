@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { sendErrorResponse, sendSuccessResponse } from 'src/helpers/response';
+import { getStorageOptions } from 'src/shared/file-upload.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserDto } from './dto/user.dto';
@@ -10,7 +12,7 @@ import { UserService } from './user.service';
 @ApiTags('User')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService ) { }
 
   @Get()
   @ApiQuery({ name: 'pageIndex', required: false, type: Number })
@@ -34,7 +36,7 @@ export class UserController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Create a new user' })
+  @ApiOperation({ summary: 'Admin create a new user' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'User created successfully' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request' })
   async createUser(
@@ -111,6 +113,31 @@ export class UserController {
         return sendErrorResponse(res, error, HttpStatus.NOT_FOUND);
       }
       return sendErrorResponse(res, error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Post('/upload-avatar')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        userId: {
+          type: 'integer'
+        },
+        file: {
+          type: 'string',
+          format: 'binary'
+        }
+      },
+      required: ['userId', 'file']
+    }
+  })
+  @UseInterceptors(FileInterceptor('file', {storage: getStorageOptions('avatar')}))
+  async uploadAvatar(@UploadedFile() file: Express.Multer.File){
+    return {
+      filename: file.originalname,
+      path: `/public/img/${file.originalname}`
     }
   }
 }

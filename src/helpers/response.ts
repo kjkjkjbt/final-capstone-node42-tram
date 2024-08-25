@@ -1,10 +1,10 @@
 import { Response } from 'express';
 import { HttpStatus } from '@nestjs/common';
 
-export const sendSuccessResponse = (res: Response, data: any, message: string = 'Success', statusCode: number = HttpStatus.OK) => {
+export const sendSuccessResponse = (res: Response, data: any, message?: string, statusCode: number = HttpStatus.OK) => {
   return res.status(statusCode).json({
     statusCode,
-    message,
+    message: message || 'Success',
     data,
   });
 }

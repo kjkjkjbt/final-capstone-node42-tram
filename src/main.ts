@@ -9,7 +9,7 @@ async function bootstrap() {
   // setup swagger
   const configSwagger = new DocumentBuilder()
   .setTitle("Airbnb")
-  .setDescription("list API về AirBnB")
+  .setDescription("Danh sách các API về AirBnB")
   .setVersion("1.0")
   .build()
 
