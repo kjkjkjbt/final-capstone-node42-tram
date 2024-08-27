@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 import { sendErrorResponse, sendSuccessResponse } from 'src/helpers/response';
 import { getStorageOptions } from 'src/shared/file-upload.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -12,7 +13,7 @@ import { UserService } from './user.service';
 @ApiTags('User')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService ) { }
+  constructor(private readonly userService: UserService) { }
 
   @Get()
   @ApiQuery({ name: 'pageIndex', required: false, type: Number })
@@ -35,6 +36,8 @@ export class UserController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   @ApiOperation({ summary: 'Admin create a new user' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'User created successfully' })
@@ -75,6 +78,8 @@ export class UserController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a user by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User deleted successfully' })
@@ -95,6 +100,8 @@ export class UserController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   @ApiOperation({ summary: 'Update a user by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'User updated successfully' })
@@ -116,28 +123,29 @@ export class UserController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post('/upload-avatar')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
-        userId: {
-          type: 'integer'
-        },
         file: {
           type: 'string',
           format: 'binary'
         }
       },
-      required: ['userId', 'file']
+      required: ['file']
     }
   })
-  @UseInterceptors(FileInterceptor('file', {storage: getStorageOptions('avatar')}))
-  async uploadAvatar(@UploadedFile() file: Express.Multer.File){
-    return {
-      filename: file.originalname,
-      path: `/public/img/${file.originalname}`
-    }
+  @UseInterceptors(FileInterceptor('file', { storage: getStorageOptions('avatar') }))
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request
+  ) {
+    const userId = Number(req.user["data"].id);
+    let path = `/public/img/avatar/${file.filename}`;
+    return this.userService.uploadAvatar(userId, path)
   }
 }

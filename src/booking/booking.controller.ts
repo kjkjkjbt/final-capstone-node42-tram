@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { sendErrorResponse, sendSuccessResponse } from 'src/helpers/response';
 import { BookingService } from './booking.service';
@@ -57,11 +58,13 @@ export class BookingController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   @ApiOperation({ summary: 'Create a new booking' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Booking created successfully' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request' })
-  async createUser(
+  async createBooking(
     @Body() createBooking: CreateBookingDto,
     @Res() res: Response
   ): Promise<Response<BookingDto>> {
@@ -74,11 +77,13 @@ export class BookingController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a booking by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Booking deleted successfully' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Booking not found' })
-  async deleteLocationById(
+  async deleteBookingById(
     @Param('id') id: number,
     @Res() res: Response
   ): Promise<Response<void>> {
@@ -94,6 +99,8 @@ export class BookingController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   @ApiOperation({ summary: 'Update a booking by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Booking updated successfully' })

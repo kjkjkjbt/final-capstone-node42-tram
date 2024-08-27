@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { sendErrorResponse, sendSuccessResponse } from 'src/helpers/response';
 import { CommentService } from './comment.service';
@@ -18,7 +19,7 @@ export class CommentController {
   @ApiOperation({ summary: 'Get list comment' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Get list successfully' })
   @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'internal server' })
-  async locationPagination(
+  async commentPagination(
     @Query('pageIndex') pageIndex: string,
     @Query('pageSize') pageSize: string,
     @Res() res: Response
@@ -34,11 +35,13 @@ export class CommentController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   @ApiOperation({ summary: 'Create a new comment' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Comment created successfully' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request' })
-  async createRoom(
+  async createComment(
     @Body() createComment: CreateCommentDto,
     @Res() res: Response
   ): Promise<Response<CommentDto>> {
@@ -51,11 +54,13 @@ export class CommentController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a comment by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Comment deleted successfully' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Comment not found' })
-  async deleteRoomById(
+  async deleteCommentById(
     @Param('id') id: number,
     @Res() res: Response
   ): Promise<Response<void>> {
@@ -71,19 +76,21 @@ export class CommentController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   @ApiOperation({ summary: 'Update a comment by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Comment updated successfully' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Comment not found' })
-  async updateRoom(
+  async updateComment(
     @Param('id') id: number,
     @Body() updateCommentDto: UpdateCommentDto,
     @Res() res: Response
   ): Promise<Response<CommentDto>> {
     try {
-      const roomId = Number(id);
-      const roomUpdated = await this.commentService.updateComment(roomId, updateCommentDto);
-      return sendSuccessResponse(res, roomUpdated, 'Comment updated successfully', HttpStatus.OK);
+      const commentId = Number(id);
+      const commentUpdated = await this.commentService.updateComment(commentId, updateCommentDto);
+      return sendSuccessResponse(res, commentUpdated, 'Comment updated successfully', HttpStatus.OK);
     } catch (error) {
       if (error instanceof NotFoundException) {
         return sendErrorResponse(res, error, HttpStatus.NOT_FOUND);

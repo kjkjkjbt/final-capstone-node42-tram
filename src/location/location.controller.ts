@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Response } from 'express';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 import { sendErrorResponse, sendSuccessResponse } from 'src/helpers/response';
 import { getStorageOptions } from 'src/shared/file-upload.service';
 import { CreateLocationDto } from './dto/create-location.dto';
@@ -14,12 +15,15 @@ import { LocationService } from './location.service';
 export class LocationController {
   constructor(private readonly locationService: LocationService) { }
 
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: 'Create a new location' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'User created successfully' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request' })
-  async createUser(
+  async createLocation(
     @Body() createLocation: CreateLocationDto,
+    @Req() req: Request,
     @Res() res: Response
   ): Promise<Response<LocationDto>> {
     try {
@@ -78,6 +82,8 @@ export class LocationController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a location by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Location deleted successfully' })
@@ -98,11 +104,13 @@ export class LocationController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   @ApiOperation({ summary: 'Update a location by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Location updated successfully' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Location not found' })
-  async updateUser(
+  async updateLocation(
     @Param('id') id: number,
     @Body() updateLocationDto: UpdateLocationDto,
     @Res() res: Response

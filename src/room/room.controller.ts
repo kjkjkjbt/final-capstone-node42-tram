@@ -1,14 +1,15 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { Body, Delete, Get, HttpStatus, NotFoundException, Param, Post, Put, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { sendErrorResponse, sendSuccessResponse } from 'src/helpers/response';
 import { getStorageOptions } from 'src/shared/file-upload.service';
 import { RoomDto } from './dto/room.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Room')
 @Controller('room')
@@ -22,7 +23,7 @@ export class RoomController {
   @ApiOperation({ summary: 'Get list room' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Get list successfully' })
   @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'internal server' })
-  async locationPagination(
+  async roomPagination(
     @Query('pageIndex') pageIndex: string,
     @Query('pageSize') pageSize: string,
     @Query('keyword') keyword: string,
@@ -31,14 +32,16 @@ export class RoomController {
     try {
       const page = pageIndex ? Number(pageIndex) : 1;
       const size = pageSize ? Number(pageSize) : 10;
-      let locations = await this.roomService.getRoomPagination(page, size, keyword);
+      let rooms = await this.roomService.getRoomPagination(page, size, keyword);
 
-      return res.status(HttpStatus.OK).json(locations)
+      return res.status(HttpStatus.OK).json(rooms)
     } catch (error) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' })
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   @ApiOperation({ summary: 'Create a new room' })
   @ApiResponse({ status: HttpStatus.CREATED, description: 'Room created successfully' })
@@ -79,6 +82,8 @@ export class RoomController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a room by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Room deleted successfully' })
@@ -99,6 +104,8 @@ export class RoomController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Put(':id')
   @ApiOperation({ summary: 'Update a room by ID' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Room updated successfully' })
@@ -120,6 +127,8 @@ export class RoomController {
     }
   }
 
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Post('/upload-image')
   @ApiConsumes('multipart/form-data')
   @ApiBody({

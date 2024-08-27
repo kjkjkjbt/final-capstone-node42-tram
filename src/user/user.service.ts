@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { plainToClass } from 'class-transformer';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -129,6 +129,36 @@ export class UserService {
                 throw error;
             }
             throw new InternalServerErrorException(`Failed to update user: ${error.message}`);
+        }
+    }
+
+    async uploadAvatar(
+        userId: number,
+        path: string,
+    ): Promise<any> {
+        try {
+            const checkUser = await this.prisma.nguoi_dung.findFirst({
+                where: {
+                    id: userId,
+                },
+            });
+
+            if (checkUser) {
+                const updatedUser = await this.prisma.nguoi_dung.update({
+                    where: {
+                        id: userId,
+                    },
+                    data: {
+                        avatar: path,
+                    },
+                });
+
+                return updatedUser;
+            } else {
+                throw new BadRequestException('Mã người dùng không tồn tại');
+            }
+        } catch {
+            throw new InternalServerErrorException('Không tìm thấy tài nguyên!');
         }
     }
 }
